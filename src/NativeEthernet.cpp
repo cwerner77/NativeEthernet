@@ -119,18 +119,18 @@ int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long resp
         init_params.timer_api = &timer_api;
         /* FNET Initialization */
         if (fnet_init(&init_params) != FNET_ERR) {
-//          Serial.println("TCP/IP stack initialization is done.\n");
+          Serial.println("TCP/IP stack initialization is done.\n");
           /* You may use FNET stack API */
           /* Initialize networking interfaces using fnet_netif_init(). */
     //        Get current net interface.
           if(fnet_netif_init(FNET_CPU_ETH0_IF, mac, 6) != FNET_ERR){
-//            Serial.println("netif Initialized");
+            Serial.println("netif Initialized");
             if(fnet_netif_get_default() == 0){
-//              Serial.println("ERROR: Network Interface is not configurated!");
+              Serial.println("ERROR: Network Interface is not configurated!");
               return false;
             }
             else {
-//              Serial.println("SUCCESS: Network Interface is configurated!");
+              Serial.println("SUCCESS: Network Interface is configurated!");
               fnet_link_params_t link_params;
               link_params.netif_desc = fnet_netif_get_default();
               link_params.callback = link_callback;
@@ -141,17 +141,17 @@ int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long resp
             }
           }
           else {
-//            Serial.println("Error:netif initialization failed.\n");
+            Serial.println("Error:netif initialization failed.\n");
             return false;
           }
         }
         else {
-//          Serial.println("Error:TCP/IP stack initialization failed.\n");
+          Serial.println("Error:TCP/IP stack initialization failed.\n");
           return false;
         }
     }
     else{
-//        Serial.println("Error:TCP/IP stack already initialized.");
+        Serial.println("Error:TCP/IP stack already initialized.");
 //        return true;
     }
     
@@ -329,6 +329,44 @@ IPAddress EthernetClass::localIP()
 {
 	return IPAddress(fnet_netif_get_ip4_addr(fnet_netif_get_default()));
 }
+
+void EthernetClass::ipv6Status()
+{
+	fnet_netif_desc_t                   netif = fnet_netif_get_default();
+     	fnet_netif_ip6_addr_info_t          ip6_address;
+        fnet_netif_ip6_prefix_t             ip6_prefix;
+        fnet_netif_ip6_neighbor_cache_t     ip6_neighbor_cache;
+        fnet_char_t                         numaddr[FNET_IP6_ADDR_STR_SIZE];
+        fnet_char_t                         mac_str[FNET_MAC_ADDR_STR_SIZE];
+
+        Serial.println("ipv6 configuration:");
+        for(int i=0U; fnet_netif_get_ip6_addr(netif, i, &ip6_address) == FNET_TRUE; i++)
+        {
+            Serial.printf("   [%d] %s\n", i,
+                                fnet_inet_ntop(AF_INET6, &ip6_address.address, numaddr, sizeof(numaddr)));
+        }     
+
+
+        for(int i=0U; fnet_netif_get_ip6_prefix(netif, i, &ip6_prefix) == FNET_TRUE; i++)
+        {
+            Serial.printf("   [%d] %s/%d\n", i, 
+                                fnet_inet_ntop(AF_INET6, &ip6_prefix.prefix, numaddr, sizeof(numaddr)), ip6_prefix.prefix_length);
+        }     
+
+        /* Print content of IPv6 Neighbor Cache. */
+        for(int i=0U; fnet_netif_get_ip6_neighbor_cache(netif, i, &ip6_neighbor_cache) == FNET_TRUE; i++)
+        {
+            if(i == 0U)
+            {
+                Serial.println("\nIPv6 Neighbor Cache:");
+            }
+            Serial.printf("   [%d] %s = %s (%s)\n", i, 
+                                fnet_inet_ntop(AF_INET6, &ip6_neighbor_cache.ip_addr, numaddr, sizeof(numaddr)), 
+                                fnet_mac_to_str(ip6_neighbor_cache.ll_addr, mac_str),
+                                (ip6_neighbor_cache.is_router == FNET_TRUE) ? "router" : "host");
+        }
+}
+
 
 IPAddress EthernetClass::subnetMask()
 {

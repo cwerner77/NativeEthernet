@@ -112,6 +112,7 @@ public:
 
 	static void MACAddress(uint8_t *mac_address);
 	static IPAddress localIP();
+        static void ipv6Status();
 	static IPAddress subnetMask();
 	static IPAddress gatewayIP();
     static IPAddress dhcpServerIP();
