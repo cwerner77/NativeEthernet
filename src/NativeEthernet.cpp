@@ -339,21 +339,21 @@ void EthernetClass::ipv6Status()
         fnet_char_t                         numaddr[FNET_IP6_ADDR_STR_SIZE];
         fnet_char_t                         mac_str[FNET_MAC_ADDR_STR_SIZE];
 
-        Serial.println("ipv6 configuration:");
+        Serial.println("IPv6 addresses:");
         for(int i=0U; fnet_netif_get_ip6_addr(netif, i, &ip6_address) == FNET_TRUE; i++)
         {
             Serial.printf("   [%d] %s\n", i,
                                 fnet_inet_ntop(AF_INET6, &ip6_address.address, numaddr, sizeof(numaddr)));
         }     
 
-
+        Serial.println("IPv6 prefixes:");
         for(int i=0U; fnet_netif_get_ip6_prefix(netif, i, &ip6_prefix) == FNET_TRUE; i++)
         {
             Serial.printf("   [%d] %s/%d\n", i, 
                                 fnet_inet_ntop(AF_INET6, &ip6_prefix.prefix, numaddr, sizeof(numaddr)), ip6_prefix.prefix_length);
         }     
 
-        /* Print content of IPv6 Neighbor Cache. */
+         Serial.println("IPv6 neighbor cache:");
         for(int i=0U; fnet_netif_get_ip6_neighbor_cache(netif, i, &ip6_neighbor_cache) == FNET_TRUE; i++)
         {
             if(i == 0U)
