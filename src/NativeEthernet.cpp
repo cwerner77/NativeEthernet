@@ -356,10 +356,6 @@ void EthernetClass::ipv6Status()
          Serial.println("IPv6 neighbor cache:");
         for(int i=0U; fnet_netif_get_ip6_neighbor_cache(netif, i, &ip6_neighbor_cache) == FNET_TRUE; i++)
         {
-            if(i == 0U)
-            {
-                Serial.println("\nIPv6 Neighbor Cache:");
-            }
             Serial.printf("   [%d] %s = %s (%s)\n", i, 
                                 fnet_inet_ntop(AF_INET6, &ip6_neighbor_cache.ip_addr, numaddr, sizeof(numaddr)), 
                                 fnet_mac_to_str(ip6_neighbor_cache.ll_addr, mac_str),
