@@ -63,6 +63,8 @@ void EthernetClass::setSocketNum(uint8_t _socket_num){
 int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long responseTimeout)
 {
     unsigned long startMillis = millis();
+    
+
     if(!fnet_netif_is_initialized(fnet_netif_get_default())){
         struct fnet_init_params     init_params;
         if(stack_heap_size == 0){
@@ -130,7 +132,19 @@ int EthernetClass::begin(uint8_t *mac, unsigned long timeout, unsigned long resp
               return false;
             }
             else {
+	      int if_enum = 0;
+              char if_name[10];
+              fnet_netif_desc_t if_desc;
               Serial.println("SUCCESS: Network Interface is configurated!");
+
+	      while ((if_desc = fnet_netif_get_by_number(if_enum))) {
+		 fnet_netif_get_name(if_desc, if_name, sizeof(if_name));
+                 Serial.printf("Interface %i: %s\r\n", if_enum++, if_name);
+              }
+              fnet_netif_set_default(fnet_netif_get_by_name("eth0"));
+	      fnet_netif_get_name(fnet_netif_get_default(), if_name, sizeof(if_name));
+	      Serial.printf("Default interface: %s\r\n", if_name); 
+
               fnet_link_params_t link_params;
               link_params.netif_desc = fnet_netif_get_default();
               link_params.callback = link_callback;
