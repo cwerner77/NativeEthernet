@@ -42,9 +42,6 @@ int EthernetClient::connect(const char * host, uint16_t port)
 	}
 	dns.begin(Ethernet.dnsServerIP());
 	if (!dns.getHostByName(host, remote_addr)) return 0; // TODO: use _timeout
-#if FNET_CFG_TLS
-    host_name = host;
-#endif
 	return connect(remote_addr, port);
 }
 
@@ -83,31 +80,6 @@ int EthernetClient::connect(IPAddress ip, uint16_t port)
         if (stat == SnSR::ESTABLISHED || stat == SnSR::CLOSE_WAIT) {
             _remoteIP = ip;
             _remotePort = port;
-#if FNET_CFG_TLS
-            if(_tls_en && tls_desc != 0){
-//                Serial.println("TLS socket create");
-                fnet_tls_socket_t tls_socket = fnet_tls_socket(tls_desc, Ethernet.socket_ptr[sockindex]);
-                if(tls_socket == FNET_NULL){
-                    Serial.println("Failed to create TLS client socket");
-                    EthernetServer::_tls[sockindex] = false;
-                }
-                else{
-//                    Serial.println("TLS socket made");
-                    EthernetServer::_tls[sockindex] = true;
-                    EthernetServer::tls_socket_ptr[sockindex] = tls_socket;
-                    fnet_tls_socket_set_hostname(tls_socket, host_name);
-                    if(fnet_tls_socket_connect(tls_socket) == FNET_ERR){
-                        Serial.println("TLS handshake failed");
-                        if(EthernetServer::_tls[sockindex]){
-                            fnet_tls_socket_close(EthernetServer::tls_socket_ptr[sockindex]);
-                        }
-                        EthernetServer::_tls[sockindex] = false;
-                        fnet_tls_release(tls_desc);
-                        tls_desc = 0;
-                    }
-                }
-            }
-#endif
             return 1;
         }
         if (stat == SnSR::CLOSED) {
@@ -122,48 +94,6 @@ int EthernetClient::connect(IPAddress ip, uint16_t port)
 	return 0;
 }
 
-#if FNET_CFG_TLS
-int EthernetClient::connect(const char * host, uint16_t port, bool tls)
-{
-    _tls_en = true;
-    if(_tls_en && tls_desc != 0){
-        EthernetServer::_tls[sockindex] = true;
-    }
-    else if(_tls_en){
-        tls_desc = fnet_tls_init(FNET_TLS_ROLE_CLIENT);
-        if(tls_desc == 0){
-            Serial.println("Failed to initialize TLS Client");
-            EthernetServer::_tls[sockindex] = false;
-            _tls_en = false;
-        }
-        else{
-//            Serial.println("TLS Client made");
-            if(fnet_tls_set_ca_certificate(tls_desc, ca_certificate_buffer, ca_certificate_buffer_size) == FNET_ERR)
-            {
-                Serial.println("TLS ca certificate error.");
-                fnet_tls_release(tls_desc);
-                EthernetServer::_tls[sockindex] = false;
-                _tls_en = false;
-            }
-            else{
-//                Serial.println("TLS socket true");
-                _tls_en = true;
-            }
-        }
-    }
-    else{
-//        _tls_en = false;
-    }
-    return connect(host, port);
-}
-
-int EthernetClient::connect(IPAddress ip, uint16_t port, bool tls)
-{
-    //Probably not supported, maybe
-    _tls_en = false;
-    return connect(ip, port);
-}
-#endif
 
 int EthernetClient::availableForWrite(void)
 {
@@ -194,20 +124,8 @@ int EthernetClient::available()
     
     int ret = 0;
     if(_remaining == 0) {
-#if FNET_CFG_TLS
-        if(EthernetServer::_tls[sockindex]){
-            fnet_socket_recvfrom(Ethernet.socket_ptr[sockindex], Ethernet.socket_buf_receive[sockindex], Ethernet.socket_size, MSG_PEEK, &_from, &fromlen);
-            ret = fnet_tls_socket_recv(EthernetServer::tls_socket_ptr[sockindex], Ethernet.socket_buf_receive[sockindex], Ethernet.socket_size);
-            Ethernet.socket_buf_index[sockindex] = 0;
-        }
-        else{
-            ret = fnet_socket_recvfrom(Ethernet.socket_ptr[sockindex], Ethernet.socket_buf_receive[sockindex], Ethernet.socket_size, 0, &_from, &fromlen);
-            Ethernet.socket_buf_index[sockindex] = 0;
-        }
-#else
         ret = fnet_socket_recvfrom(Ethernet.socket_ptr[sockindex], Ethernet.socket_buf_receive[sockindex], Ethernet.socket_size, 0, &_from, &fromlen);
         Ethernet.socket_buf_index[sockindex] = 0;
-#endif
     }
     int8_t error_handler = fnet_error_get();
     if(error_handler == -20){
